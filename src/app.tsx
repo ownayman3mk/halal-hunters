@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://ovhggjufqobeytccvowx.supabase.co';
-const supabaseKey = 'Sb_publishable_bscMWeJ6c6h1AoYR5vl8Og_uX2jRgu9';
+const supabaseUrl = 'https://ownggjxfqkeytcvsexux.supabase.co';
+const supabaseKey = 'sb_publishable_boosters...'; // Keep your existing key here if it's already full
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -17,81 +17,75 @@ export default function App() {
     setLoading(true);
     setMessage('');
 
-    if (isSignUp) {
-      const { error } = await supabase.auth.signUp({
+    if (isSignup) {
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { username: email.split('@')[0] } }
       });
+
       if (error) {
-        setMessage('Error: ' + error.message);
+        setMessage(error.message);
       } else {
-        setMessage('Success! Account created. You can now log in.');
-        setIsSignUp(false);
+        // Also try to insert into profiles table safely so it shows up in your table editor
+        if (data.user) {
+          await supabase.from('profiles').insert([
+            { id: data.user.id, email: email, is_active: false }
+          ]).select();
+        }
+        setMessage('Account created successfully! Contact admin for activation.');
       }
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
       if (error) {
-        setMessage('Error: ' + error.message);
+        setMessage(error.message);
       } else {
-        setMessage('Success! Redirecting...');
-        window.location.reload();
+        setMessage('Logged in successfully!');
       }
     }
     setLoading(false);
   };
 
   return (
-    <div style={{ background: '#0b0f19', color: '#fff', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
-      <div style={{ background: '#121826', padding: '40px', borderRadius: '12px', width: '100%', maxWidth: '400px', border: '1px solid #1e293b' }}>
-        <h2 style={{ marginBottom: '8px', fontSize: '24px' }}>{isSignUp ? 'Create an account' : 'Member authentication'}</h2>
-        <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '24px' }}>Enter your credentials to access live feeds.</p>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif', background: '#f5f5f5' }}>
+      <form onSubmit={handleAuth} style={{ background: 'white', padding: '30px', borderRadius: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.1)', width: '300px' }}>
+        <h2 style={{ marginBottom: '20px', textAlign: 'center' }}>{isSignup ? 'Sign Up' : 'Login'}</h2>
+        
+        {message && <p style={{ color: message.includes('success') ? 'green' : 'red', fontSize: '14px', marginBottom: '15px' }}>{message}</p>}
+        
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Email</label>
+          <input 
+            type="email" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+            required 
+            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+          />
+        </div>
 
-        <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', marginBottom: '6px', color: '#cbd5e1' }}>Email address</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{ width: '100%', padding: '12px', fontSize: '15px', background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: '6px', outline: 'none', boxSizing: 'border-box' }}
-            />
-          </div>
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Password</label>
+          <input 
+            type="password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
+            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+          />
+        </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', marginBottom: '6px', color: '#cbd5e1' }}>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              style={{ width: '100%', padding: '12px', fontSize: '15px', background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: '6px', outline: 'none', boxSizing: 'border-box' }}
-            />
-          </div>
-
-          <button 
-            type="submit" 
-            disabled={loading} 
-            style={{ width: '100%', padding: '12px', fontSize: '15px', background: '#f59e0b', color: '#000', fontWeight: 'bold', border: 'none', borderRadius: '6px', cursor: 'pointer', marginTop: '8px' }}
-          >
-            {loading ? 'Processing...' : (isSignUp ? 'Register' : 'Access terminal')}
-          </button>
-        </form>
-
-        <button 
-          onClick={() => { setIsSignUp(!isSignUp); setMessage(''); }}
-          style={{ background: 'none', border: 'none', color: '#38bdf8', marginTop: '16px', cursor: 'pointer', fontSize: '14px', width: '100%', textAlign: 'center' }}
-        >
-          {isSignUp ? 'Already have an account? Log in' : "Don't have an account? Register"}
+        <button type="submit" disabled={loading} style={{ width: '100%', padding: '10px', background: '#0070f3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+          {loading ? 'Processing...' : (isSignup ? 'Sign Up' : 'Login')}
         </button>
 
-        {message && (
-          <p style={{ marginTop: '16px', fontSize: '14px', color: message.startsWith('Error') ? '#ef4444' : '#22c55e', textAlign: 'center' }}>
-            {message}
-          </p>
-        )}
-      </div>
+        <p onClick={() => setIsSignup(!isSignup)} style={{ marginTop: '15px', textAlign: 'center', fontSize: '13px', color: '#0070f3', cursor: 'pointer' }}>
+          {isSignup ? 'Already have an account? Login' : "Don't have an account? Sign Up"}
+        </p>
+      </form>
     </div>
   );
 }
