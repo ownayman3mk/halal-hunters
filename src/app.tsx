@@ -8,6 +8,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export default function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -18,23 +19,26 @@ export default function App() {
     setMessage('');
 
     if (isSignup) {
-      const { data, error } = await supabase.auth.signUp({
+      // 1. Sign up and save Full Name + is_active status directly in Auth Metadata
+      const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            full_name: fullName,
+            is_active: false, // Starts inactive by default
+          }
+        }
       });
 
       if (error) {
         setMessage(error.message);
       } else {
-        if (data.user) {
-          await supabase.from('profiles').insert([
-            { id: data.user.id, email: email, is_active: false }
-          ]).select();
-        }
-        setMessage('Account created successfully! Contact admin for activation.');
+        setMessage('Account created successfully! Waiting for activation.');
       }
     } else {
-      const { error } = await supabase.auth.signInWithPassword({
+      // 2. Login check
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -42,7 +46,14 @@ export default function App() {
       if (error) {
         setMessage(error.message);
       } else {
-        setMessage('Logged in successfully!');
+        // Check if user is active from their metadata
+        const isActive = data.user?.user_metadata?.is_active;
+        if (!isActive) {
+          setMessage('Your account is not activated by admin yet.');
+          await supabase.auth.signOut(); // Log them back out if inactive
+        } else {
+          setMessage('Logged in successfully!');
+        }
       }
     }
     setLoading(false);
@@ -55,6 +66,19 @@ export default function App() {
         
         {message && <p style={{ color: message.includes('success') ? 'green' : 'red', fontSize: '14px', marginBottom: '15px' }}>{message}</p>}
         
+        {isSignup && (
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Full Name</label>
+            <input 
+              type="text" 
+              value={fullName} 
+              onChange={(e) => setFullName(e.target.value)} 
+              required 
+              style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+            />
+          </div>
+        )}
+
         <div style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>Email</label>
           <input 
