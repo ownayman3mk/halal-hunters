@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://ownggjxfqkeytcvsexux.supabase.co';
-const supabaseKey = 'sb_publishable_boosters...'; // Keep your existing key here if it's already full
+const supabaseKey = 'Sb_publishable_bscMWeJ6c6h1AoYR5vl8Og_uX2jRgu9';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function App() {
@@ -26,7 +26,6 @@ export default function App() {
       if (error) {
         setMessage(error.message);
       } else {
-        // Also try to insert into profiles table safely so it shows up in your table editor
         if (data.user) {
           await supabase.from('profiles').insert([
             { id: data.user.id, email: email, is_active: false }
